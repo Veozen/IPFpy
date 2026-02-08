@@ -24,7 +24,6 @@ def generate_random_table(n_dim,
     df["value"] = np.random.rand(len(df)) * scale
     return df
 
-
 def get_unique_col_name(df, base_name):
     """
     Generate a unique column name
@@ -35,7 +34,6 @@ def get_unique_col_name(df, base_name):
         new_name = f"{base_name}_{i}"
         i += 1
     return new_name
-
 
 def agg_by_sql(df: pd.DataFrame,
                by,
@@ -65,7 +63,6 @@ def agg_by_sql(df: pd.DataFrame,
         df_agg = con.execute(query).fetchdf()
     return df_agg
 
-
 def aggregate_and_list(df:pd.DataFrame,
                        by, var=None,
                        margins=None,
@@ -92,7 +89,7 @@ def aggregate_and_list(df:pd.DataFrame,
     """
     if by is not None and not isinstance(by,list):
         by = [by]
-        
+
     subsets=[]
     if by is not None:
         for i in range(0,len(by)):
@@ -100,16 +97,15 @@ def aggregate_and_list(df:pd.DataFrame,
             subsets = subsets + [list(c) for c in comb]
     else:
         subsets=[[]]
-        
+
     if margins is not None:
         subsets = [sub for sub in subsets if sub in margins]
-        
+
     df_out = pd.DataFrame()
     for sub in subsets:
         sub_agg = agg_by_sql(df, by=sub, var=var, id=id)
         df_out = pd.concat([df_out,sub_agg],ignore_index=True)
-    return df_out  
-
+    return df_out
 
 def aggregate_table(df_in,
                     by=None,
