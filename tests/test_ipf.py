@@ -3,8 +3,8 @@ Tests for IPFpy package
 """
 
 import pytest
-from IPFpy import ipf, generate_random_table
 import pandas as pd
+from IPFpy import ipf, generate_random_table
 
 def test_ipf_basic_execution():
     """
