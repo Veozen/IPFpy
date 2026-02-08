@@ -24,6 +24,7 @@ def generate_random_table(n_dim,
     df["value"] = np.random.rand(len(df)) * scale
     return df
 
+
 def get_unique_col_name(df, base_name):
     """
     Generate a unique column name
@@ -34,6 +35,7 @@ def get_unique_col_name(df, base_name):
         new_name = f"{base_name}_{i}"
         i += 1
     return new_name
+
 
 def agg_by_sql(df: pd.DataFrame,
                by,
@@ -63,6 +65,7 @@ def agg_by_sql(df: pd.DataFrame,
         df_agg = con.execute(query).fetchdf()
     return df_agg
 
+
 def aggregate_and_list(df:pd.DataFrame,
                        by, var=None,
                        margins=None,
@@ -89,7 +92,7 @@ def aggregate_and_list(df:pd.DataFrame,
     """
     if by is not None and not isinstance(by,list):
         by = [by]
-
+        
     subsets=[]
     if by is not None:
         for i in range(0,len(by)):
@@ -97,15 +100,16 @@ def aggregate_and_list(df:pd.DataFrame,
             subsets = subsets + [list(c) for c in comb]
     else:
         subsets=[[]]
-
+        
     if margins is not None:
         subsets = [sub for sub in subsets if sub in margins]
-
+        
     df_out = pd.DataFrame()
     for sub in subsets:
         sub_agg = agg_by_sql(df, by=sub, var=var, id=id)
         df_out = pd.concat([df_out,sub_agg],ignore_index=True)
     return df_out  
+
 
 def aggregate_table(df_in,
                     by=None,
@@ -148,6 +152,7 @@ def aggregate_table(df_in,
 
     return by_values, df_margins.drop([cell_id_name],axis=1), constraints[[cell_id_name,cons_id_name]]
 
+
 def get_discrepancy(con):
     """
       returns the discrepancies between then aggregated margins and their target values
@@ -160,7 +165,7 @@ def get_discrepancy(con):
       output: in the database connection con
         table wrk_discrepancies
       output:
-        value maxDiscrepancy
+        value max_discrepancy
 
     """
     con.execute(f"""
@@ -202,8 +207,9 @@ def get_discrepancy(con):
                       END;
       ;
       """)
-    maxDiscrepancy = con.execute("SELECT max(abs(diff)) FROM wrk_discrepancies ;").fetchone()[0]
-    return maxDiscrepancy
+    max_discrepancy = con.execute("SELECT max(abs(diff)) FROM wrk_discrepancies ;").fetchone()[0]
+    return max_discrepancy
+
 
 def timer(func):
     """
@@ -231,14 +237,13 @@ def ipf(input=None,
         cons_type=None,
         db_file=":memory:",
         tol=1,
-        maxIter=100,
+        max_iter=100,
         out_parquet=None,
         out_csv=None,
         silent=False):
     """
     input: table
-        This table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting 
-        along with boundaries whose adjusted value is meant to stay within.
+        Thif table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting along with boundaries whose adjusted value is meant to stay within.
         unit_id    : identifier for the decision variables
         weight     : decision variables. >=0
         lb	     : weight >= lb
@@ -266,6 +271,7 @@ def ipf(input=None,
         Output table lists all the initials cells/units along with their adjusted values.
         untiId    : identifier for the decision variables
         weight    : adjusted weight. Will fit in the interval lb <=	weight <= ub
+
     """
     if not silent:
         print()
@@ -274,123 +280,126 @@ def ipf(input=None,
         print("-----------")
         print()
   
+
     with duckdb.connect(db_file) as con:
-      # 1. Register the source as a virtual table named 'input_table'
-      if isinstance(input, pd.DataFrame):
-          con.register('input_table', input)
-      elif isinstance(input, str):
-          # DuckDB's read_auto handles CSV, Parquet, or JSON automatically
-          con.execute(f"CREATE OR REPLACE VIEW input_table AS SELECT * FROM '{input}'")
+        # 1. Register the source as a virtual table named 'input_table'
+        if isinstance(input, pd.DataFrame):
+            con.register('input_table', input)
+        elif isinstance(input, str):
+            # DuckDB's read_auto handles CSV, Parquet, or JSON automatically
+            con.execute(f"CREATE OR REPLACE VIEW input_table AS SELECT * FROM '{input}'")
 
-      if isinstance(constraints, pd.DataFrame):
-          con.register('constraints_table', constraints)
-      elif isinstance(constraints, str):
-          # DuckDB's read_auto handles CSV, Parquet, or JSON automatically
-          con.execute(f"CREATE OR REPLACE VIEW constraints_table AS SELECT * FROM '{constraints}'")
+        if isinstance(constraints, pd.DataFrame):
+            con.register('constraints_table', constraints)
+        elif isinstance(constraints, str):
+            # DuckDB's read_auto handles CSV, Parquet, or JSON automatically
+            con.execute(f"CREATE OR REPLACE VIEW constraints_table AS SELECT * FROM '{constraints}'")
 
-      if isinstance(targets, pd.DataFrame):
-          con.register('targets_table', targets)
-      elif isinstance(constraints, str):
-          # DuckDB's read_auto handles CSV, Parquet, or JSON automatically
-          con.execute(f"CREATE OR REPLACE VIEW targets_table AS SELECT * FROM '{targets}'")
+        if isinstance(targets, pd.DataFrame):
+            con.register('targets_table', targets)
+        elif isinstance(constraints, str):
+            # DuckDB's read_auto handles CSV, Parquet, or JSON automatically
+            con.execute(f"CREATE OR REPLACE VIEW targets_table AS SELECT * FROM '{targets}'")
 
-      # Collect the values from dataset targets
-      n_units       = con.execute("SELECT COUNT(DISTINCT unit_id ) FROM input_table;").fetchone()[0]
-      n_var         = con.execute("SELECT COUNT(DISTINCT cons_id ) FROM constraints_table;").fetchone()[0]
+        # Collect the values from dataset targets
+        n_units       = con.execute(f"SELECT COUNT(DISTINCT unit_id ) FROM input_table;").fetchone()[0]
+        n_var         = con.execute(f"SELECT COUNT(DISTINCT cons_id ) FROM constraints_table;").fetchone()[0]
 
-      if not silent:
-          print(f"Number of equations: {n_var}")
-          print(f"Number of units    : {n_units}")
-          print()
+        if not silent:
+            print(f"Number of equations: {n_var}")
+            print(f"Number of units    : {n_units}")
+            print()
 
-      # set up the working table of weights to be adjusted
-      sql_select = f"SELECT {unit_id} as unit_id, {var} as weight"
-      if lb:
-          sql_select += ", lb"
-      if ub:
-          sql_select += ", ub"
+        # set up the working table of weights to be adjusted
+        sql_select = f"SELECT {unit_id} as unit_id, {var} as weight"
+        if lb:
+            sql_select += ", lb"
+        if ub:
+            sql_select += ", ub"
 
-      con.execute(f"""
-                  CREATE TABLE wrk_weights AS
-                  {sql_select}
-                  FROM input_table
-                  """)
+        con.execute(f"""
+                    CREATE TABLE wrk_weights AS
+                    {sql_select}
+                    FROM input_table
+                    """)
 
-      # read in the constraints
-      con.execute("""
-                  CREATE TABLE wrk_input_constraints AS
-                  SELECT unit_id, cons_id
-                  FROM constraints_table
-                  """)
+        # read in the constraints
+        con.execute(f"""
+                    CREATE TABLE wrk_input_constraints AS
+                    SELECT unit_id, cons_id
+                    FROM constraints_table
+                    """)
 
-      # read in the target values for the constraints
-      sql_select = f"SELECT cons_id, 'eq' as cons_type, target"
-      if cons_type:
-          sql_select = f"SELECT cons_id, {cons_type}, target"
-      con.execute(f"""
-                  CREATE TABLE wrk_input_targets AS
-                  {sql_select}
-                  FROM targets_table
-                  """)
+        # read in the target values for the constraints
+        sql_select = f"SELECT cons_id, 'eq' as cons_type, target"
+        if cons_type:
+            sql_select = f"SELECT cons_id, {cons_type}, target"
+        con.execute(f"""
+                    CREATE TABLE wrk_input_targets AS
+                    {sql_select}
+                    FROM targets_table
+                    """)
 
-      # get the initial state of adjustment between the margins and the target margins
-      maxDiscrepancy  = tol
-      maxDiscrepancy  = get_discrepancy(con)
-      if not silent:
-          print(f"Initial max discrepancy : {maxDiscrepancy} ")
+        # get the initial state of adjustment between the margins and the target margins
+        max_discrepancy  = tol
+        max_discrepancy  = get_discrepancy(con)
+        if not silent:
+            print(f"Initial max discrepancy : {max_discrepancy} ")
 
-      n_iter = 0
-      while ( ( (maxDiscrepancy >= tol) and (n_iter <= maxIter) ) ):
-          # for each unit_id, fetch the adjustment required by the constraint
-          con.execute("""
-                      CREATE OR REPLACE TABLE wrk_constraints as
-                      SELECT a.*, b.adjustement
-                      FROM wrk_input_constraints as a
-                      LEFT JOIN wrk_discrepancies as b
-                      ON a.cons_id = b.cons_id
-                      ;
-                      """)
-          # compute the geometric mean of the adjustements to be made
-          con.execute("""
-                      CREATE OR REPLACE TABLE wrk_unit_adjustement AS
-                      SELECT unit_id, exp(mean(log(adjustement))) as adjust
-                      FROM wrk_constraints
-                      GROUP BY unit_id
-                      """)
-          # adjust the weights
-          con.execute("""
-                      CREATE OR REPLACE TABLE wrk_weights AS
-                      SELECT a.* EXCLUDE weight, a.weight*b.adjust  as weight
-                      FROM wrk_weights as a
-                      LEFT JOIN wrk_unit_adjustement as b
-                      ON a.unit_id = b.unit_id
-                      """)
-          # make sure the values are within bounds*/
-          if lb :
-              con.execute("""
-                          CREATE OR REPLACE TABLE wrk_weights AS
-                          SELECT *, GREATEST(weight, lb) AS weight
-                          FROM wrk_weights
-                          EXCLUDE weight_;
-                          """)
-          if ub:
-              con.execute("""
-                          CREATE OR REPLACE TABLE wrk_weights AS
-                          SELECT *, LEAST(weight, ub) AS weight
-                          FROM wrk_weights
-                          EXCLUDE weight_;
-                          """)
+        n_iter = 0
+        while ( ( (max_discrepancy >= tol) and (n_iter <= max_iter) ) ):
+            # for each unit_id, fetch the adjustment required by the constraint
+            con.execute(f"""
+                        CREATE OR REPLACE TABLE wrk_constraints as
+                        SELECT a.*, b.adjustement
+                        FROM wrk_input_constraints as a
+                        LEFT JOIN wrk_discrepancies as b
+                        ON a.cons_id = b.cons_id
+                        ;
+                        """)
+            # compute the geometric mean of the adjustements to be made
+            con.execute(f"""
+                        CREATE OR REPLACE TABLE wrk_unit_adjustement AS
+                        SELECT unit_id, exp(mean(log(adjustement))) as adjust
+                        FROM wrk_constraints
+                        GROUP BY unit_id
+                        """)
+            # adjust the weights
+            con.execute(f"""
+                        CREATE OR REPLACE TABLE wrk_weights AS
+                        SELECT a.* EXCLUDE weight, a.weight*b.adjust  as weight
+                        FROM wrk_weights as a
+                        LEFT JOIN wrk_unit_adjustement as b
+                        ON a.unit_id = b.unit_id
+                        """)
+            # make sure the values are within bounds*/
+            if lb :
+                con.execute("""
+                            CREATE OR REPLACE TABLE wrk_weights AS
+                            SELECT *, GREATEST(weight, lb) AS weight
+                            FROM wrk_weights
+                            EXCLUDE weight_;
+                            """)
+            if ub:
+                con.execute("""
+                            CREATE OR REPLACE TABLE wrk_weights AS
+                            SELECT *, LEAST(weight, ub) AS weight
+                            FROM wrk_weights
+                            EXCLUDE weight_;
+                            """)
 
-          maxDiscrepancy = get_discrepancy(con)
+            max_discrepancy = get_discrepancy(con)
 
-          if not silent:
-              print(f"iteration {n_iter} : {maxDiscrepancy}")
-          n_iter += 1
+            if not silent:
+                print(f"iteration {n_iter} : {max_discrepancy}")
+            n_iter += 1
 
-      if out_parquet:
-          con.execute(f"COPY wrk_weights TO '{out_parquet}' (FORMAT PARQUET);")
-      if out_csv:
-          con.execute(f"COPY wrk_weights TO '{out_csv}' (HEADER, DELIMITER ',');")
+        if out_parquet:
+            con.execute(f"COPY wrk_weights TO '{out_parquet}' (FORMAT PARQUET);")
+        if out_csv:
+            con.execute(f"COPY wrk_weights TO '{out_csv}' (HEADER, DELIMITER ',');")
 
-      if not (out_parquet or out_csv):
-          return con.execute("SELECT * FROM wrk_weights").fetchdf()
+        if not (out_parquet or out_csv):
+            return con.execute("SELECT * FROM wrk_weights").fetchdf()
+
+
