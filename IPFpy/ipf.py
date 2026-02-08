@@ -24,7 +24,6 @@ def generate_random_table(n_dim,
     df["value"] = np.random.rand(len(df)) * scale
     return df
 
-
 def get_unique_col_name(df, base_name):
     """
     Generate a unique column name
@@ -35,7 +34,6 @@ def get_unique_col_name(df, base_name):
         new_name = f"{base_name}_{i}"
         i += 1
     return new_name
-
 
 def agg_by_sql(df: pd.DataFrame,
                by,
@@ -65,7 +63,6 @@ def agg_by_sql(df: pd.DataFrame,
         df_agg = con.execute(query).fetchdf()
     return df_agg
 
-
 def aggregate_and_list(df:pd.DataFrame,
                        by, var=None,
                        margins=None,
@@ -92,7 +89,7 @@ def aggregate_and_list(df:pd.DataFrame,
     """
     if by is not None and not isinstance(by,list):
         by = [by]
-        
+
     subsets=[]
     if by is not None:
         for i in range(0,len(by)):
@@ -100,16 +97,15 @@ def aggregate_and_list(df:pd.DataFrame,
             subsets = subsets + [list(c) for c in comb]
     else:
         subsets=[[]]
-        
+
     if margins is not None:
         subsets = [sub for sub in subsets if sub in margins]
-        
+
     df_out = pd.DataFrame()
     for sub in subsets:
         sub_agg = agg_by_sql(df, by=sub, var=var, id=id)
         df_out = pd.concat([df_out,sub_agg],ignore_index=True)
     return df_out  
-
 
 def aggregate_table(df_in,
                     by=None,
@@ -151,7 +147,6 @@ def aggregate_table(df_in,
     constraints = df_margins.explode(cell_id_name).reset_index(drop=True)
 
     return by_values, df_margins.drop([cell_id_name],axis=1), constraints[[cell_id_name,cons_id_name]]
-
 
 def get_discrepancy(con):
     """
@@ -210,7 +205,6 @@ def get_discrepancy(con):
     maxDiscrepancy = con.execute("SELECT max(abs(diff)) FROM wrk_discrepancies ;").fetchone()[0]
     return maxDiscrepancy
 
-
 def timer(func):
     """
     Decorator that return the duration of a function execution
@@ -243,7 +237,8 @@ def ipf(input=None,
         silent=False):
     """
     input: table
-        Thif table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting along with boundaries whose adjusted value is meant to stay within.
+        This table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting 
+        along with boundaries whose adjusted value is meant to stay within.
         unit_id    : identifier for the decision variables
         weight     : decision variables. >=0
         lb	     : weight >= lb
@@ -271,7 +266,6 @@ def ipf(input=None,
         Output table lists all the initials cells/units along with their adjusted values.
         untiId    : identifier for the decision variables
         weight    : adjusted weight. Will fit in the interval lb <=	weight <= ub
-
     """
     if not silent:
         print()
@@ -280,9 +274,7 @@ def ipf(input=None,
         print("-----------")
         print()
   
-
     with duckdb.connect(db_file) as con:
-
       # 1. Register the source as a virtual table named 'input_table'
       if isinstance(input, pd.DataFrame):
           con.register('input_table', input)
@@ -303,8 +295,8 @@ def ipf(input=None,
           con.execute(f"CREATE OR REPLACE VIEW targets_table AS SELECT * FROM '{targets}'")
 
       # Collect the values from dataset targets
-      n_units       = con.execute(f"SELECT COUNT(DISTINCT unit_id ) FROM input_table;").fetchone()[0]
-      n_var         = con.execute(f"SELECT COUNT(DISTINCT cons_id ) FROM constraints_table;").fetchone()[0]
+      n_units       = con.execute("SELECT COUNT(DISTINCT unit_id ) FROM input_table;").fetchone()[0]
+      n_var         = con.execute("SELECT COUNT(DISTINCT cons_id ) FROM constraints_table;").fetchone()[0]
 
       if not silent:
           print(f"Number of equations: {n_var}")
@@ -325,7 +317,7 @@ def ipf(input=None,
                   """)
 
       # read in the constraints
-      con.execute(f"""
+      con.execute("""
                   CREATE TABLE wrk_input_constraints AS
                   SELECT unit_id, cons_id
                   FROM constraints_table
@@ -350,7 +342,7 @@ def ipf(input=None,
       n_iter = 0
       while ( ( (maxDiscrepancy >= tol) and (n_iter <= maxIter) ) ):
           # for each unit_id, fetch the adjustment required by the constraint
-          con.execute(f"""
+          con.execute("""
                       CREATE OR REPLACE TABLE wrk_constraints as
                       SELECT a.*, b.adjustement
                       FROM wrk_input_constraints as a
@@ -359,14 +351,14 @@ def ipf(input=None,
                       ;
                       """)
           # compute the geometric mean of the adjustements to be made
-          con.execute(f"""
+          con.execute("""
                       CREATE OR REPLACE TABLE wrk_unit_adjustement AS
                       SELECT unit_id, exp(mean(log(adjustement))) as adjust
                       FROM wrk_constraints
                       GROUP BY unit_id
                       """)
           # adjust the weights
-          con.execute(f"""
+          con.execute("""
                       CREATE OR REPLACE TABLE wrk_weights AS
                       SELECT a.* EXCLUDE weight, a.weight*b.adjust  as weight
                       FROM wrk_weights as a
@@ -402,8 +394,3 @@ def ipf(input=None,
 
       if not (out_parquet or out_csv):
           return con.execute("SELECT * FROM wrk_weights").fetchdf()
-
-
-
-
-
