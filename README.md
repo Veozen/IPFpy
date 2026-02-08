@@ -55,7 +55,7 @@ margins = margins.rename(columns={"value":"target"}) #rename margin column
 
 # step2 - modify the margins by adding noise to the inner cells
 new_table = input_table.copy().drop("unit_id",axis=1)
-new_table["value"] =  input_table["value"] + np.random.uniform(-1, 1, input_table.shape[0])
+new_table["value"] =  input_table["value"] * np.random.uniform(0, 2, input_table.shape[0])
 modified_table, modified_margins, constraints = aggregate_table(new_table, by=[0,1,2,3], var="value")
 modified_margins = modified_margins.rename(columns={"value":"target"})
 
