@@ -4,7 +4,7 @@ Tests for IPFpy package
 
 import pytest
 import pandas as pd
-from IPFpy import ipf, generate_random_table
+from IPFpy import ipf, generate_random_table, aggregate_table
 
 def test_ipf_basic_execution():
     """
