@@ -14,11 +14,11 @@ inputs tables can be either pandas dataframes, .csv file or .parquet file
   constraints : table
       This table maps for each constaint identifier, which unit_id to aggregate
       unit_id   : identifier for the decision variables
-      cons_id   : identifiant des contraintes
+      cons_id   : identifier for each marging
 
   targets : table
       This table lists all the target values that the margins should add up to once adjusted
-      cons_id   : identifiant des contraintes
+      cons_id   : identifier for each marging
       cons_type	: constraint must be greater or equal (ge) the target, lesser or equal (le), or equal (eq)
       target    : value for the constaint
   
