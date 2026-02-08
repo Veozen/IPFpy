@@ -130,7 +130,8 @@ def aggregate_table(df_in,
         cons_id     : identifiant des contraintes
 
     """
-    # aggregate "var" by "by" columns in case there are duplicates in the input to make sure we have a table with signle entries per cell
+    # aggregate "var" by "by" columns
+    # in case there are duplicates in the input to make sure we have a table with signle entries per cell
     by_values               = df_in.groupby(by)[var].sum().reset_index()
 
     # get a unique name not already present in the dataframe to store cell identifier
@@ -168,7 +169,7 @@ def get_discrepancy(con):
         value max_discrepancy
 
     """
-    con.execute(f"""
+    con.execute("""
       CREATE OR REPLACE TABLE wrk_constraints AS
       SELECT a.cons_id,  fsum(b.weight)  as aggregated_weight_per_constraint
       FROM wrk_input_constraints AS a
@@ -177,7 +178,7 @@ def get_discrepancy(con):
       GROUP by a.cons_id
       ;
     """)
-    con.execute(f"""
+    con.execute("""
       CREATE OR REPLACE TABLE wrk_discrepancies AS
       SELECT a.cons_id, a.cons_type, a.target, b.aggregated_weight_per_constraint as target_approximation
       FROM wrk_input_targets AS a
@@ -243,7 +244,8 @@ def ipf(input=None,
         silent=False):
     """
     input: table
-        Thif table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting along with boundaries whose adjusted value is meant to stay within.
+        This table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting
+        along with boundaries whose adjusted value is meant to stay within.
         unit_id    : identifier for the decision variables
         weight     : decision variables. >=0
         lb	     : weight >= lb
@@ -252,11 +254,11 @@ def ipf(input=None,
     constraints : table
         This table maps for each constaint identifier, which unit_id to aggregate
         unit_id   : identifier for the decision variables
-        cons_id   : identifiant des contraintes
+        cons_id   : identifier for each margin
 
     targets : table
         This table lists all the target values that the margins should add up to once adjusted
-        cons_id   : identifiant des contraintes
+        cons_id   : identifier for each margin
         cons_type	: constraint must be greater or equal (ge) the target, lesser or equal (le), or equal (eq)
         target    : value for the constaint
 
@@ -302,8 +304,8 @@ def ipf(input=None,
             con.execute(f"CREATE OR REPLACE VIEW targets_table AS SELECT * FROM '{targets}'")
 
         # Collect the values from dataset targets
-        n_units       = con.execute(f"SELECT COUNT(DISTINCT unit_id ) FROM input_table;").fetchone()[0]
-        n_var         = con.execute(f"SELECT COUNT(DISTINCT cons_id ) FROM constraints_table;").fetchone()[0]
+        n_units       = con.execute("SELECT COUNT(DISTINCT unit_id ) FROM input_table;").fetchone()[0]
+        n_var         = con.execute("SELECT COUNT(DISTINCT cons_id ) FROM constraints_table;").fetchone()[0]
 
         if not silent:
             print(f"Number of equations: {n_var}")
@@ -324,14 +326,14 @@ def ipf(input=None,
                     """)
 
         # read in the constraints
-        con.execute(f"""
+        con.execute("""
                     CREATE TABLE wrk_input_constraints AS
                     SELECT unit_id, cons_id
                     FROM constraints_table
                     """)
 
         # read in the target values for the constraints
-        sql_select = f"SELECT cons_id, 'eq' as cons_type, target"
+        sql_select = "SELECT cons_id, 'eq' as cons_type, target"
         if cons_type:
             sql_select = f"SELECT cons_id, {cons_type}, target"
         con.execute(f"""
@@ -401,5 +403,4 @@ def ipf(input=None,
 
         if not (out_parquet or out_csv):
             return con.execute("SELECT * FROM wrk_weights").fetchdf()
-
 
