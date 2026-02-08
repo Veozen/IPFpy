@@ -3,7 +3,7 @@ Iterative proportionial fitting that can work with larger than memory tables.
 
 inputs tables can be either pandas dataframes, .csv file or .parquet file
 
-'''
+```
   input: table
       Thif table lists all the cells or units in a table whose value will be adjusted by Iterative proportional fitting along with boundaries whose adjusted value is meant to stay within.
       unit_id    : identifier for the decision variables
@@ -38,11 +38,11 @@ inputs tables can be either pandas dataframes, .csv file or .parquet file
       untiId    : identifier for the decision variables
       weight    : adjusted weight. Will fit in the interval lb <=	weight <= ub
 
-'''
+```
   
 ## Example
 
-'''python
+```python
 from ipfpy import *
 import numpy as np
 
@@ -102,4 +102,4 @@ ipf(input       ="/home/deck/Desktop/Programming/IPF/IPF/input_table.csv",
     out_csv     ="adjusted_table.csv",
     silent=True)
 
-'''
+```
