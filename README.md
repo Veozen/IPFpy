@@ -43,7 +43,7 @@ inputs tables can be either pandas dataframes, .csv file or .parquet file
 ## Example
 
 ```python
-from ipfpy import *
+from IPFpy import *
 import numpy as np
 
 
