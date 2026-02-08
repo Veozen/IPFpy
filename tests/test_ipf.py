@@ -30,7 +30,6 @@ def test_ipf_basic_execution():
                             unit_id="unit_id",
                             var="value",
                             cons_id="cons_id",
-                            db_file=None,
                             tol=0.1,
                             max_iter=1000)
     # 3. Assertions
