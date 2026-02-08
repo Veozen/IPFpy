@@ -32,7 +32,7 @@ def test_ipf_basic_execution():
                             cons_id="cons_id",
                             db_file=None,
                             tol=0.1,
-                            maxIter=1000)
+                            max_iter=1000)
     # 3. Assertions
     assert isinstance(adjusted_table, pd.DataFrame), f"Expected Pandas Dataframe, got {type(adjusted_table)}"
     assert len(adjusted_table) > 0, "The returned table is empty"
