@@ -43,7 +43,7 @@ def agg_by_sql(df: pd.DataFrame,
         # Aggregate over the entire dataset
         query = f"""
         SELECT 
-            SUM({var}) AS {var},
+            FSUM({var}) AS {var},
             LIST({id}) AS {id}
         FROM 'df'
         """
@@ -53,7 +53,7 @@ def agg_by_sql(df: pd.DataFrame,
         query = f"""
         SELECT 
             {group_by_columns},
-            SUM({var}) AS {var},
+            FSUM({var}) AS {var},
             LIST({id}) AS {id}
         FROM 'df'
         GROUP BY {group_by_columns}
