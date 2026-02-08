@@ -4,6 +4,7 @@ Tests for IPFpy package
 
 import pytest
 import pandas as pd
+import numpy as np
 from IPFpy import ipf, generate_random_table, aggregate_table
 
 def test_ipf_basic_execution():
@@ -33,6 +34,6 @@ def test_ipf_basic_execution():
                             tol=0.1,
                             maxIter=1000)
     # 3. Assertions
-    assert isinstance(adjusted_table, pd.DataFrame), f"Expected Pandas Dataframe, got {type(rounded)}"
+    assert isinstance(adjusted_table, pd.DataFrame), f"Expected Pandas Dataframe, got {type(adjusted_table)}"
     assert len(adjusted_table) > 0, "The returned table is empty"
 
