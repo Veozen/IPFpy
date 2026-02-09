@@ -91,9 +91,10 @@ ipf(input       =input_table,
     silent=True)
 
 # input directly from files
-ipf(input       ="/home/deck/Desktop/Programming/IPF/IPF/input_table.csv",
-    constraints ="/home/deck/Desktop/Programming/IPF/IPF/constraints.csv",
-    targets     ="/home/deck/Desktop/Programming/IPF/IPF/modified_margins.csv",
+# paths to the input files have to be adjusted to correspond to the location of the input files
+ipf(input       ="/home/Desktop/Programming/IPF/IPF/input_table.csv",
+    constraints ="/home/Desktop/Programming/IPF/IPF/constraints.csv",
+    targets     ="/home/Desktop/Programming/IPF/IPF/modified_margins.csv",
     unit_id     ="unit_id",
     var         ="value",
     cons_id     ="cons_id",
