@@ -22,7 +22,7 @@ jobs:
         pip install pylint
         pip install -r requirements.txt
         pip install setuptools pytest
-        pip install .  # Installs CtrlRound in "editable" mode so tests can find it
+        pip install .  
     - name: Analysing the code with pylint
       run: |
         # Add the current directory to the path so Pylint can "see" the package
